@@ -120,6 +120,8 @@ CFLAGS    := -Wall -g -std=c99 -O0
 CFLAGS    += -mlittle-endian -mcpu=cortex-m0plus -march=armv6s-m -mthumb
 CFLAGS    += -ffunction-sections -fdata-sections
 CFLAGS    += $(INCLUDES) $(DEFS)
+# line-wrapping
+CFLAGS    += -fmessage-length=80
 
 ## Linker flags
 # LDFLAGS   := -Wl,--gc-sections -Wl,-Map=$(TARGET).map $(LIBS) -T$(LDFILE)
