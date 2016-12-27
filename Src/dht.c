@@ -20,6 +20,9 @@
 #define GPIO_MODE             ((uint32_t)0x00000003U)
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+/* Timer handler declaration */
+TIM_HandleTypeDef      htim;
+
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 void GPIO_ConfigureMode(GPIO_TypeDef  *GPIOx, uint32_t pin, uint32_t mode)
@@ -59,6 +62,17 @@ void DHT_GPIO_Init(void)
 
   HAL_GPIO_WritePin(DHT_DATA_GPIO_PORT, DHT_DATA_PIN, GPIO_PIN_SET);
 
+  /* Timer init */
+  __HAL_RCC_TIM2_CLK_ENABLE();
+  htim.Instance           = TIM2;
+  htim.Init.Prescaler     = (SystemCoreClock / 1000000) - 1;
+  htim.Init.CounterMode   = TIM_COUNTERMODE_UP;
+  htim.Init.Period        = 0xFFFF;
+  htim.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim.Channel            = TIM_CHANNEL_1;
+  if (HAL_TIM_Base_Init(&htim) != HAL_OK) {
+    while (1);
+  }
 }
 
 /**
@@ -106,6 +120,26 @@ DHT_StatusTypeDef DHT_ReadSensor(DHT_ValuesTypeDef *values)
   DHT_DATA_GPIO_PORT->MODER &= 0xFFFFCFFF; // function call is too slow with -O0
   // GPIO_ConfigureMode(DHT_DATA_GPIO_PORT, DHT_DATA_PIN, GPIO_MODE_INPUT);
 
+  /* Start TIM */
+  if (HAL_TIM_Base_Start(&htim) != HAL_OK) {
+    while (1);
+  }
+
+  for (int i = 40; i >=0; i--) {
+    /* wait for DATA to go high */
+    while ((DHT_DATA_GPIO_PORT->IDR & DHT_DATA_PIN) == (uint32_t)GPIO_PIN_RESET);
+    /* measure high time */
+    __HAL_TIM_SET_COUNTER(&htim, 0x00000U);
+    while ((DHT_DATA_GPIO_PORT->IDR & DHT_DATA_PIN) != (uint32_t)GPIO_PIN_RESET) {
+      // if (__HAL_TIM_GET_COUNTER(&htim) > 1000) return DHT_TIMEOUT_ERROR;
+    }
+    // store timer value in buffer for debug
+    buffer[i] = __HAL_TIM_GET_COUNTER(&htim);
+  }
+
+
+
+
   /* Sample DATA from sensor */
   // NOTE: raw register read is faster than HAL call
   // TODO: find minimum sampling rate
@@ -114,18 +148,18 @@ DHT_StatusTypeDef DHT_ReadSensor(DHT_ValuesTypeDef *values)
   // 2. mesure high time.
   // if high time > 24us --> 0b1
   // else if high time < 70us --> 0b0
-  for (int i = 40; i >=0; i--) {
-    /* wait for DATA to go high */
-    while ((DHT_DATA_GPIO_PORT->IDR & DHT_DATA_PIN) == (uint32_t)GPIO_PIN_RESET);
-    /* measure high time */
-    counter = 0;
-    while ((DHT_DATA_GPIO_PORT->IDR & DHT_DATA_PIN) != (uint32_t)GPIO_PIN_RESET) {
-      counter++;
-      if (counter > 50) return DHT_TIMEOUT_ERROR;
-    }
-    // store counter value in buffer for debug
-    buffer[i] = counter;
-  }
+  // for (int i = 40; i >=0; i--) {
+  //   /* wait for DATA to go high */
+  //   while ((DHT_DATA_GPIO_PORT->IDR & DHT_DATA_PIN) == (uint32_t)GPIO_PIN_RESET);
+  //   /* measure high time */
+  //   counter = 0;
+  //   while ((DHT_DATA_GPIO_PORT->IDR & DHT_DATA_PIN) != (uint32_t)GPIO_PIN_RESET) {
+  //     counter++;
+  //     if (counter > 50) return DHT_TIMEOUT_ERROR;
+  //   }
+  //   // store counter value in buffer for debug
+  //   buffer[i] = counter;
+  // }
 
   /* Read sampled data */
   /* Array is converted into 5 8-bit variables */
@@ -135,33 +169,35 @@ DHT_StatusTypeDef DHT_ReadSensor(DHT_ValuesTypeDef *values)
   uint8_t T_LByte  = 0;
   uint8_t checksum = 0;
 
+  #define TIME_LIMIT 48 /* midpoint between 72us and 24us */
+  // #define TIME_LIMIT 4 /* Found with trial and error */
   for (int i = 0; i < 8; i++) {
     int bit = 0;
-    if (buffer[i+32] > 4) bit = 1;
+    if (buffer[i+32] > TIME_LIMIT) bit = 1;
     RH_HByte += bit << i; // Shift bit is equivalent to power of 2
   }
 
   for (int i = 0; i < 8; i++) {
     int bit = 0;
-    if (buffer[i+24] > 4) bit = 1;
+    if (buffer[i+24] > TIME_LIMIT) bit = 1;
     RH_LByte += bit << i;
   }
 
   for (int i = 0; i < 8; i++) {
     int bit = 0;
-    if (buffer[i+16] > 4) bit = 1;
+    if (buffer[i+16] > TIME_LIMIT) bit = 1;
     T_HByte += bit << i;
   }
 
     for (int i = 0; i < 8; i++) {
     int bit = 0;
-    if (buffer[i+8] > 4) bit = 1;
+    if (buffer[i+8] > TIME_LIMIT) bit = 1;
     T_LByte += bit << i;
   }
 
   for (int i = 0; i < 8; i++) {
     int bit = 0;
-    if (buffer[i] > 4) bit = 1;
+    if (buffer[i] > TIME_LIMIT) bit = 1;
     checksum += bit << i;
   }
 

@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    Templates/Src/main.c 
+  * @file    Templates/Src/main.c
   * @author  MCD Application Team
   * @version V1.7.0
   * @date    31-May-2016
@@ -69,10 +69,10 @@ int main(void)
 
   /* STM32L0xx HAL library initialization:
        - Configure the Flash prefetch, Flash preread and Buffer caches
-       - Systick timer is configured by default as source of time base, but user 
-             can eventually implement his proper time base source (a general purpose 
-             timer for example or other time source), keeping in mind that Time base 
-             duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and 
+       - Systick timer is configured by default as source of time base, but user
+             can eventually implement his proper time base source (a general purpose
+             timer for example or other time source), keeping in mind that Time base
+             duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and
              handled in milliseconds basis.
        - Low Level Initialization
      */
@@ -102,7 +102,7 @@ int main(void)
   UartHandle.Init.Parity     = UART_PARITY_NONE;
   UartHandle.Init.HwFlowCtl  = UART_HWCONTROL_NONE;
   UartHandle.Init.Mode       = UART_MODE_TX_RX;
-  
+
   if(HAL_UART_Init(&UartHandle) != HAL_OK)
   {
     Error_Handler();
@@ -113,7 +113,7 @@ int main(void)
 
   DHT_ValuesTypeDef sensorValues;
   double dewpoint;
-  
+
   /* Infinite loop */
   while (1)
   {
@@ -140,7 +140,7 @@ int main(void)
 
 /**
   * @brief  System Clock Configuration
-  *         The system Clock is configured as follow : 
+  *         The system Clock is configured as follow :
   *            System Clock source            = MSI
   *            SYSCLK(Hz)                     = 2000000
   *            HCLK(Hz)                       = 2000000
@@ -156,15 +156,15 @@ static void SystemClock_Config(void)
 {
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
   RCC_OscInitTypeDef RCC_OscInitStruct;
-  
+
   /* Enable Power Control clock */
   __HAL_RCC_PWR_CLK_ENABLE();
-  
-  /* The voltage scaling allows optimizing the power consumption when the device is 
-     clocked below the maximum system frequency, to update the voltage scaling value 
+
+  /* The voltage scaling allows optimizing the power consumption when the device is
+     clocked below the maximum system frequency, to update the voltage scaling value
      regarding system frequency refer to product datasheet.  */
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
-  
+
   /* Enable MSI Oscillator */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
@@ -176,15 +176,15 @@ static void SystemClock_Config(void)
     /* Initialization Error */
     Error_Handler();
   }
-  
-  
-  /* Select MSI as system clock source and configure the HCLK, PCLK1 and PCLK2 
+
+
+  /* Select MSI as system clock source and configure the HCLK, PCLK1 and PCLK2
      clocks dividers */
   RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;  
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;  
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
   if(HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
   {
     /* Initialization Error */
@@ -215,7 +215,7 @@ static void Error_Handler(void)
   * @retval None
   */
 void assert_failed(uint8_t* file, uint32_t line)
-{ 
+{
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 
@@ -234,7 +234,7 @@ void assert_failed(uint8_t* file, uint32_t line)
 void LED_Init(void)
 {
   GPIO_InitTypeDef  GPIO_InitStruct;
-  
+
   /* Enable the GPIO_LED Clock */
   LED2_GPIO_CLK_ENABLE();
 
@@ -243,18 +243,18 @@ void LED_Init(void)
   GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull  = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  
+
   HAL_GPIO_Init(LED2_GPIO_PORT, &GPIO_InitStruct);
-  HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_RESET); 
+  HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_RESET);
 }
 
 /**
   * @brief  Configures Button GPIO and EXTI Line.
   * @param  ButtonMode: Specifies Button mode.
-  *   This parameter can be one of following parameters:   
+  *   This parameter can be one of following parameters:
   *     @arg  BUTTON_MODE_GPIO: Button will be used as simple IO
   *     @arg BUTTON_MODE_EXTI: Button will be connected to EXTI line with interrupt
-  *                            generation capability  
+  *                            generation capability
   * @retval None
   */
 void PB_Init(ButtonMode_TypeDef ButtonMode)
@@ -264,7 +264,7 @@ void PB_Init(ButtonMode_TypeDef ButtonMode)
   /* Enable the BUTTON Clock */
   USER_BUTTON_GPIO_CLK_ENABLE();
   __HAL_RCC_SYSCFG_CLK_ENABLE();
-  
+
   if(ButtonMode == BUTTON_MODE_GPIO)
   {
     /* Configure Button pin as input */
@@ -274,15 +274,15 @@ void PB_Init(ButtonMode_TypeDef ButtonMode)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     HAL_GPIO_Init(USER_BUTTON_GPIO_PORT, &GPIO_InitStruct);
   }
-  
+
   if(ButtonMode == BUTTON_MODE_EXTI)
   {
     /* Configure Button pin as input with External interrupt */
     GPIO_InitStruct.Pin = USER_BUTTON_PIN;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING; 
+    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
     HAL_GPIO_Init(USER_BUTTON_GPIO_PORT, &GPIO_InitStruct);
-    
+
     /* Enable and set Button EXTI Interrupt to the lowest priority */
     NVIC_SetPriority((IRQn_Type)(USER_BUTTON_EXTI_IRQn), 0x03);
     HAL_NVIC_EnableIRQ((IRQn_Type)((USER_BUTTON_EXTI_IRQn)));
@@ -291,32 +291,32 @@ void PB_Init(ButtonMode_TypeDef ButtonMode)
 
 
 void HAL_UART_MspInit(UART_HandleTypeDef *huart)
-{  
+{
   GPIO_InitTypeDef  GPIO_InitStruct;
-  
+
   /*##-1- Enable peripherals and GPIO Clocks #################################*/
- 
+
   /* Enable GPIO TX/RX clock */
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  
+
   /* Enable USART2 clock */
   __HAL_RCC_USART2_CLK_ENABLE();
-  
-  /*##-2- Configure peripheral GPIO ##########################################*/  
- 
+
+  /*##-2- Configure peripheral GPIO ##########################################*/
+
   /* UART TX GPIO pin configuration  */
   GPIO_InitStruct.Pin       = USARTx_TX_PIN;
   GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull      = GPIO_NOPULL;
   GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_HIGH;
   GPIO_InitStruct.Alternate = USARTx_TX_AF;
-  
+
   HAL_GPIO_Init(USARTx_TX_GPIO_PORT, &GPIO_InitStruct);
-    
+
   /* UART RX GPIO pin configuration  */
   GPIO_InitStruct.Pin = USARTx_RX_PIN;
   GPIO_InitStruct.Alternate = USARTx_RX_AF;
-    
+
   HAL_GPIO_Init(USARTx_RX_GPIO_PORT, &GPIO_InitStruct);
 }
 
