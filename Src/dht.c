@@ -21,7 +21,17 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Timer handler declaration */
+TIM_HandleTypeDef      TimHandle;
 TIM_HandleTypeDef      htim;
+
+/* Timer Input Capture Configuration Structure declaration */
+TIM_IC_InitTypeDef     sICConfig;
+
+/* Capture index */
+uint16_t               uhCaptureIndex = 0;
+
+uint16_t buffer[42];
+uint16_t g_i;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -58,21 +68,90 @@ void DHT_GPIO_Init(void)
   GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP; // ??
   GPIO_InitStruct.Pull  = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF2_TIM2; // TODO/checkme
   HAL_GPIO_Init(DHT_DATA_GPIO_PORT, &GPIO_InitStruct);
 
   HAL_GPIO_WritePin(DHT_DATA_GPIO_PORT, DHT_DATA_PIN, GPIO_PIN_SET);
 
-  /* Timer init */
+  // /* Timer init */
+  // __HAL_RCC_TIM2_CLK_ENABLE();
+  // htim.Instance           = TIM2;
+  // htim.Init.Prescaler     = (SystemCoreClock / 1000000) - 1;
+  // htim.Init.CounterMode   = TIM_COUNTERMODE_UP;
+  // htim.Init.Period        = 0xFFFF;
+  // htim.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  // htim.Channel            = TIM_CHANNEL_1;
+  // if (HAL_TIM_Base_Init(&htim) != HAL_OK) {
+  //   while (1);
+  // }
+  // // if (HAL_TIM_Base_Start(&htim) != HAL_OK) {
+  // //   while (1);
+  // // }
+  // // while(1) {
+  // //   uint32_t start = __HAL_TIM_GET_COUNTER(&htim);
+  // //   HAL_Delay(10); 
+  // //   uint32_t stop = __HAL_TIM_GET_COUNTER(&htim);
+  // //   printf("time diff: %u\n", stop - start);
+  // // }
+  
+  /*
+   * Input Capture Timer init
+   */
+  /*##-1- Enable peripherals and GPIO Clocks #################################*/
+  /* TIM2 Peripheral clock enable */
   __HAL_RCC_TIM2_CLK_ENABLE();
-  htim.Instance           = TIM2;
-  htim.Init.Prescaler     = (SystemCoreClock / 1000000) - 1;
-  htim.Init.CounterMode   = TIM_COUNTERMODE_UP;
-  htim.Init.Period        = 0xFFFF;
-  htim.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim.Channel            = TIM_CHANNEL_1;
-  if (HAL_TIM_Base_Init(&htim) != HAL_OK) {
-    while (1);
+    
+  /* Enable GPIO channels Clock */
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  
+  /* Configure (TIM2_Channel2) in Alternate function, push-pull and High speed */
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF2_TIM2;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  HAL_GPIO_WritePin(DHT_DATA_GPIO_PORT, GPIO_PIN_1, GPIO_PIN_SET);
+
+  /*##-2- Configure the NVIC for TIMx ########################################*/
+  /* Set the TIM2 global Interrupt */
+  HAL_NVIC_SetPriority(TIM2_IRQn, 0, 1);
+  
+  /* Enable the TIM2 global Interrupt */
+  HAL_NVIC_EnableIRQ(TIM2_IRQn);
+
+  /*##-1- Configure the TIM peripheral #######################################*/ 
+  /* Set TIMx instance */
+  TimHandle.Instance = TIM2;
+   
+  /* Initialize TIMx peripheral as follow:
+       + Period = 0xFFFF
+       + Prescaler = 0
+       + ClockDivision = 0
+       + Counter direction = Up
+  */
+  TimHandle.Init.Period        = 0xFFFF;
+  TimHandle.Init.Prescaler     = (SystemCoreClock / 1000000) - 1;
+  TimHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  TimHandle.Init.CounterMode   = TIM_COUNTERMODE_UP;  
+  if(HAL_TIM_IC_Init(&TimHandle) != HAL_OK)
+  {
+    /* Initialization Error */
+    while(1);
+  }  
+  /*##-2- Configure the Input Capture channel ################################*/ 
+  /* Configure the Input Capture of channel 2 */
+  sICConfig.ICPolarity  = TIM_ICPOLARITY_BOTHEDGE /* TIM_ICPOLARITY_RISING */;
+  sICConfig.ICSelection = TIM_ICSELECTION_DIRECTTI;
+  sICConfig.ICPrescaler = TIM_ICPSC_DIV1;
+  sICConfig.ICFilter    = 0;   
+  if(HAL_TIM_IC_ConfigChannel(&TimHandle, &sICConfig, TIM_CHANNEL_2) != HAL_OK)
+ {
+    /* Configuration Error */
+    while(1);
   }
+
 }
 
 /**
@@ -108,34 +187,68 @@ DHT_StatusTypeDef DHT_ReadSensor(DHT_ValuesTypeDef *values)
   // NOTE: pin nb hardcoded to pin 6
   // 0xFFFFCFFFF: MODE6 Input 
   // 0xFFFFDFFFF: MODE6 GPOutput
-  uint16_t buffer[41];
+  // uint16_t buffer[41];
   uint16_t counter;
+  g_i = 41;
   /* Configure pin to output */
   // DHT_DATA_GPIO_PORT->MODER &= 0xFFFFDFFF;
-  GPIO_ConfigureMode(DHT_DATA_GPIO_PORT, DHT_DATA_PIN, GPIO_MODE_OUTPUT_PP);
-  HAL_GPIO_WritePin(DHT_DATA_GPIO_PORT, DHT_DATA_PIN, GPIO_PIN_RESET);
+  GPIO_ConfigureMode(DHT_DATA_GPIO_PORT, GPIO_PIN_1, GPIO_MODE_OUTPUT_PP);
+  HAL_GPIO_WritePin(DHT_DATA_GPIO_PORT, GPIO_PIN_1, GPIO_PIN_RESET);
   HAL_Delay(DHT_WAKEUP_DELAY);
-  HAL_GPIO_WritePin(DHT_DATA_GPIO_PORT, DHT_DATA_PIN, GPIO_PIN_SET);
+  // HAL_GPIO_WritePin(DHT_DATA_GPIO_PORT, GPIO_PIN_1, GPIO_PIN_SET);
   /* Configure pin to input */
-  DHT_DATA_GPIO_PORT->MODER &= 0xFFFFCFFF; // function call is too slow with -O0
-  // GPIO_ConfigureMode(DHT_DATA_GPIO_PORT, DHT_DATA_PIN, GPIO_MODE_INPUT);
-
-  /* Start TIM */
-  if (HAL_TIM_Base_Start(&htim) != HAL_OK) {
-    while (1);
+  // DHT_DATA_GPIO_PORT->MODER &= 0xFFFFCFFF; // function call is too slow with -O0
+  // GPIO_ConfigureMode(DHT_DATA_GPIO_PORT, GPIO_PIN_1, GPIO_MODE_AF_PP);
+  GPIO_InitTypeDef  GPIO_InitStruct;
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF2_TIM2;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  
+  /*##-3- Start the Input Capture in interrupt mode ##########################*/
+  if(HAL_TIM_IC_Start_IT(&TimHandle, TIM_CHANNEL_2) != HAL_OK)
+  {
+    /* Starting Error */
+    while(1);
   }
 
-  for (int i = 40; i >=0; i--) {
-    /* wait for DATA to go high */
-    while ((DHT_DATA_GPIO_PORT->IDR & DHT_DATA_PIN) == (uint32_t)GPIO_PIN_RESET);
-    /* measure high time */
-    __HAL_TIM_SET_COUNTER(&htim, 0x00000U);
-    while ((DHT_DATA_GPIO_PORT->IDR & DHT_DATA_PIN) != (uint32_t)GPIO_PIN_RESET) {
-      // if (__HAL_TIM_GET_COUNTER(&htim) > 1000) return DHT_TIMEOUT_ERROR;
-    }
-    // store timer value in buffer for debug
-    buffer[i] = __HAL_TIM_GET_COUNTER(&htim);
-  }
+  // /* Sample DATA using TIMER input capture to measure each pulse width */
+  // TODO
+  // wait for buffer to be filled
+  while (g_i < 42 );
+  
+  // TIMER test code
+  // if (HAL_TIM_Base_Start(&TimHandle) != HAL_OK) {
+  //   while (1);
+  // }
+  // while(g_i >= 0) {
+  //   // __HAL_TIM_SET_COUNTER(&TimHandle, 0x00000U);
+  //   // uint32_t start = __HAL_TIM_GET_COUNTER(&TimHandle);
+  //   HAL_Delay(500); 
+  //   // uint32_t stop = __HAL_TIM_GET_COUNTER(&TimHandle);
+  //   printf("running: g_i  = %u\n", g_i);
+  // }
+
+  // /*
+  //  * Sample data with TIM measurments
+  //  */
+  // /* Start TIM */
+  // if (HAL_TIM_Base_Start(&htim) != HAL_OK) {
+  //   while (1);
+  // }
+  // for (int i = 40; i >=0; i--) {
+  //   /* wait for DATA to go high */
+  //   while ((DHT_DATA_GPIO_PORT->IDR & DHT_DATA_PIN) == (uint32_t)GPIO_PIN_RESET);
+  //   /* measure high time */
+  //   __HAL_TIM_SET_COUNTER(&htim, 0x00000U);
+  //   while ((DHT_DATA_GPIO_PORT->IDR & DHT_DATA_PIN) != (uint32_t)GPIO_PIN_RESET) {
+  //     // if (__HAL_TIM_GET_COUNTER(&htim) > 1000) return DHT_TIMEOUT_ERROR;
+  //   }
+  //   // store timer value in buffer for debug
+  //   buffer[i] = __HAL_TIM_GET_COUNTER(&htim);
+  // }
 
 
 
@@ -160,7 +273,7 @@ DHT_StatusTypeDef DHT_ReadSensor(DHT_ValuesTypeDef *values)
   //   // store counter value in buffer for debug
   //   buffer[i] = counter;
   // }
-
+  
   /* Read sampled data */
   /* Array is converted into 5 8-bit variables */
   uint8_t RH_HByte = 0;
@@ -214,4 +327,59 @@ DHT_StatusTypeDef DHT_ReadSensor(DHT_ValuesTypeDef *values)
 
   return DHT_OK;
 
+}
+
+
+/**
+  * @brief  Input Capture callback in non blocking mode 
+  * @param  htim : TIM IC handle
+  * @retval None
+  */
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+  if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
+  {
+    if(uhCaptureIndex == 1)
+     {
+       // /* Get the 1st Input Capture value */
+       // uwIC2Value1 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
+       /* Reset timer counter on 1st Input Capture */
+       __HAL_TIM_SET_COUNTER(&TimHandle, 0x00000U);
+       uhCaptureIndex = 0;
+    }
+    else
+    {
+        /* Store measured time on 2nd Input Capture */
+        if (g_i >= 0 && g_i < 42)
+            buffer[g_i] = __HAL_TIM_GET_COUNTER(&TimHandle);
+        g_i--;
+        uhCaptureIndex = 1;
+        // printf("CAPTURE: %u\n", g_buffer[g_i - 1]);
+    }
+    // while(1);
+  //   else if(uhCaptureIndex == 1)
+  //   {
+  //     /* Get the 2nd Input Capture value */
+  //     uwIC2Value2 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2); 
+      
+  //     /* Capture computation */
+  //     if (uwIC2Value2 > uwIC2Value1)
+  //     {
+  //       uwDiffCapture = (uwIC2Value2 - uwIC2Value1); 
+  //     }
+  //     else if (uwIC2Value2 < uwIC2Value1)
+  //     {
+  //       uwDiffCapture = ((0xFFFF - uwIC2Value1) + uwIC2Value2) + 1;
+  //     }
+  //     else
+  //     {
+  //       uwDiffCapture = 0;
+  //     }
+  //     /* uwFrequency computation
+  //     TIM2 counter clock = RCC_Clocks.HCLK_Frequency */      
+  //     uwFrequency = HAL_RCC_GetHCLKFreq()/ (uwDiffCapture + 1);
+  //     uhCaptureIndex = 0;
+  //   }
+    
+  }
 }
