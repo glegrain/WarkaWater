@@ -28,6 +28,7 @@ OBJECTS  := main.o
 OBJECTS  += $(CUBE_DIR)/Drivers/CMSIS/Device/ST/STM32L0xx/Source/Templates/gcc/startup_stm32l053xx.o
 OBJECTS  += system_stm32l0xx.o
 OBJECTS  += stm32l0xx_it.o
+OBJECTS  += stm32l0xx_hal_msp.o
 OBJECTS  += dht.o
 OBJECTS  += dewpoint.o
 

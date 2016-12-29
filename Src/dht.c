@@ -97,31 +97,7 @@ void DHT_GPIO_Init(void)
   /*
    * Input Capture Timer init
    */
-  /*##-1- Enable peripherals and GPIO Clocks #################################*/
-  /* TIM2 Peripheral clock enable */
-  __HAL_RCC_TIM2_CLK_ENABLE();
-    
-  /* Enable GPIO channels Clock */
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  
-  /* Configure (TIM2_Channel2) in Alternate function, push-pull and High speed */
-  GPIO_InitStruct.Pin = GPIO_PIN_1;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF2_TIM2;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  HAL_GPIO_WritePin(DHT_DATA_GPIO_PORT, GPIO_PIN_1, GPIO_PIN_SET);
-
-  /*##-2- Configure the NVIC for TIMx ########################################*/
-  /* Set the TIM2 global Interrupt */
-  HAL_NVIC_SetPriority(TIM2_IRQn, 0, 1);
-  
-  /* Enable the TIM2 global Interrupt */
-  HAL_NVIC_EnableIRQ(TIM2_IRQn);
-
-  /*##-1- Configure the TIM peripheral #######################################*/ 
+  /*##-1- Configure the TIM peripheral #######################################*/
   /* Set TIMx instance */
   TimHandle.Instance = TIM2;
    
