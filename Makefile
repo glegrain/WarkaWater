@@ -25,7 +25,7 @@ DEFS     += -DUSE_STM32L0XX_NUCLEO
 
 
 OBJECTS  := main.o
-OBJECTS  += $(CUBE_DIR)/Drivers/CMSIS/Device/ST/STM32L0xx/Source/Templates/gcc/startup_stm32l053xx.o
+OBJECTS  += startup_stm32l053xx.o
 OBJECTS  += system_stm32l0xx.o
 OBJECTS  += stm32l0xx_it.o
 OBJECTS  += stm32l0xx_hal_msp.o
@@ -102,6 +102,7 @@ OBJECTS  += stm32l0xx_hal_uart.o
 VPATH    :=  ./Src
 VPATH    += :$(CUBE_DIR)/Drivers/STM32L0xx_HAL_Driver/Src
 VPATH    += :$(CUBE_DIR)/Drivers/BSP/STM32L0xx_Nucleo
+VPATH    += :$(CUBE_DIR)/Drivers/CMSIS/Device/ST/STM32L0xx/Source/Templates/gcc/
 
 # Include Path for All Headers
 INCLUDES := -I.
