@@ -123,10 +123,10 @@ int main(void)
       printf("DHT Error: %d\n", dht_status);
     } else {
       printf("Sensor values: %d.%d%%, %d.%dºC\n",
-      sensorValues.RelativeHumidityIntegral,
-      sensorValues.RelativeHumidityFractional,
-      sensorValues.TemperatureIntegral,
-      sensorValues.TemperatureFractional);
+          sensorValues.RelativeHumidityIntegral,
+          sensorValues.RelativeHumidityFractional,
+          sensorValues.TemperatureIntegral,
+          sensorValues.TemperatureFractional);
       dewpoint = dewPoint((double) sensorValues.TemperatureIntegral,
                           (double) sensorValues.RelativeHumidityIntegral);
       printf("dewpoint: %dºC\n", (int) dewpoint);
