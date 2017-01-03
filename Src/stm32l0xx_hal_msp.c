@@ -5,7 +5,7 @@
   * @version V1.7.0
   * @date    31-May-2016
   * @brief   HAL MSP module.
-  *         
+  *
   @verbatim
  ===============================================================================
                      ##### How to use this driver #####
@@ -42,7 +42,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l0xx_hal.h"
@@ -80,7 +80,7 @@ void HAL_MspInit(void)
 
 /**
   * @brief  DeInitializes the Global MSP.
-  * @param  None  
+  * @param  None
   * @retval None
   */
 void HAL_MspDeInit(void)
@@ -97,7 +97,7 @@ void HAL_TIM_IC_MspInit(TIM_HandleTypeDef *htim)
   /*##-1- Enable peripherals and GPIO Clocks #################################*/
   /* TIM2 Peripheral clock enable */
   __HAL_RCC_TIM2_CLK_ENABLE();
-    
+
   /* Enable GPIO channels Clock */
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
@@ -118,10 +118,10 @@ void HAL_TIM_IC_MspInit(TIM_HandleTypeDef *htim)
   /*##-2- Configure the NVIC for TIMx ########################################*/
   /* Set the TIM2 global Interrupt */
   HAL_NVIC_SetPriority(TIM2_IRQn, 0, 1);
-  
+
   /* Enable the TIM2 global Interrupt */
   HAL_NVIC_EnableIRQ(TIM2_IRQn);
-  
+
   /*##-3- Configure the DMA stream ###########################################*/
   /* Set the parameters to be configured */
   /*  - Memory address is automatically incremented by 16-bit
@@ -163,3 +163,4 @@ void HAL_TIM_IC_MspInit(TIM_HandleTypeDef *htim)
   */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

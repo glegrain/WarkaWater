@@ -33,3 +33,4 @@ double dewPointFast(double celsius, double humidity)
     double Td = (b * temp) / (a - temp);
     return Td;
 }
+

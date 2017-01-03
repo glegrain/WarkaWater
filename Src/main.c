@@ -321,3 +321,4 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart)
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

@@ -34,7 +34,7 @@
   *
   ******************************************************************************
   */
-  
+
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __MAIN_H
 #define __MAIN_H
@@ -47,10 +47,10 @@
 /* Exported constants --------------------------------------------------------*/
 /* Definition for USARTx Pins */
 #define USARTx_TX_PIN                    GPIO_PIN_2
-#define USARTx_TX_GPIO_PORT              GPIOA  
+#define USARTx_TX_GPIO_PORT              GPIOA
 #define USARTx_TX_AF                     GPIO_AF4_USART2
 #define USARTx_RX_PIN                    GPIO_PIN_3
-#define USARTx_RX_GPIO_PORT              GPIOA 
+#define USARTx_RX_GPIO_PORT              GPIOA
 #define USARTx_RX_AF                     GPIO_AF4_USART2
 
 /* Definition for DHT clock resources */
@@ -64,3 +64,4 @@
 #endif /* __MAIN_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

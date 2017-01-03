@@ -1,11 +1,11 @@
 /**
   ******************************************************************************
-  * @file    Templates/Src/stm32l0xx_it.c 
+  * @file    Templates/Src/stm32l0xx_it.c
   * @author  MCD Application Team
   * @version V1.7.0
   * @date    31-May-2016
   * @brief   Main Interrupt Service Routines.
-  *          This file provides template for all exceptions handler and 
+  *          This file provides template for all exceptions handler and
   *          peripherals interrupt service routine.
   ******************************************************************************
   * @attention
@@ -150,7 +150,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   if(GPIO_Pin == KEY_BUTTON_PIN)
   {
-    HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_SET);  
+    HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_SET);
   }
 }
 
@@ -178,10 +178,11 @@ void DMA1_Channel2_3_IRQHandler(void)
 }
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
   */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

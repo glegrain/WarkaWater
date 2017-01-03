@@ -18,10 +18,10 @@
 
 /* Exported types ------------------------------------------------------------*/
 
-/** 
-  * @brief  DHT Status structures definition  
-  */  
-typedef enum 
+/**
+  * @brief  DHT Status structures definition
+  */
+typedef enum
 {
   DHT_OK             = 0x00U,
   DHT_CHECKSUM_ERROR = 0x01U,

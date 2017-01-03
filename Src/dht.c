@@ -7,7 +7,7 @@
   * @brief   This file includes the DHT11 sensor driver.
   ******************************************************************************
   */
- 
+
 /* Includes ------------------------------------------------------------------*/
 #include "dht.h"
 #include <math.h>
@@ -90,18 +90,18 @@ void DHT_GPIO_Init(void)
   // // }
   // // while(1) {
   // //   uint32_t start = __HAL_TIM_GET_COUNTER(&htim);
-  // //   HAL_Delay(10); 
+  // //   HAL_Delay(10);
   // //   uint32_t stop = __HAL_TIM_GET_COUNTER(&htim);
   // //   printf("time diff: %u\n", stop - start);
   // // }
-  
+
   /*
    * Input Capture Timer init
    */
   /*##-1- Configure the TIM peripheral #######################################*/
   /* Set TIMx instance */
   TimHandle.Instance = TIM2;
-   
+
   /* Initialize TIMx peripheral as follow:
        + Period = 0xFFFF
        + Prescaler = 0
@@ -111,18 +111,18 @@ void DHT_GPIO_Init(void)
   TimHandle.Init.Period        = 0xFFFF;
   TimHandle.Init.Prescaler     = (SystemCoreClock / 1000000) - 1;
   TimHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  TimHandle.Init.CounterMode   = TIM_COUNTERMODE_UP;  
+  TimHandle.Init.CounterMode   = TIM_COUNTERMODE_UP;
   if(HAL_TIM_IC_Init(&TimHandle) != HAL_OK)
   {
     /* Initialization Error */
     while(1);
-  }  
-  /*##-2- Configure the Input Capture channel ################################*/ 
+  }
+  /*##-2- Configure the Input Capture channel ################################*/
   /* Configure the Input Capture of channel 2 */
   sICConfig.ICPolarity  = TIM_ICPOLARITY_BOTHEDGE /* TIM_ICPOLARITY_RISING */;
   sICConfig.ICSelection = TIM_ICSELECTION_DIRECTTI;
   sICConfig.ICPrescaler = TIM_ICPSC_DIV1;
-  sICConfig.ICFilter    = 0;   
+  sICConfig.ICFilter    = 0;
   if(HAL_TIM_IC_ConfigChannel(&TimHandle, &sICConfig, TIM_CHANNEL_2) != HAL_OK)
  {
     /* Configuration Error */
@@ -146,7 +146,7 @@ DHT_StatusTypeDef DHT_ReadSensor(DHT_ValuesTypeDef *values)
   // [23:16] 8-bit integer T data
   // [15: 8] 8-bit fractional T data
   // [ 7: 0] 8-bit Checksum
-  // 
+  //
   // Read:
   // Step 1: Power-on -  Wait 1 s ofter DHT11 power-on
   // Step 2: Request - MCU Output low (> 18ms),
@@ -154,7 +154,7 @@ DHT_StatusTypeDef DHT_ReadSensor(DHT_ValuesTypeDef *values)
   //         Data is pulled-up (> 40 us) and MCU waits for reponse.
   // Step 3: DHT sends a low signal (~54us to 80us)
   //         DHT sends a high signal (80us)
-  // Step 4: Receive - 
+  // Step 4: Receive -
   //         0b0: ~54us low followed by ~24us high
   //         0b1: ~54us low followed by ~70us high
   // Step 5: End Of Frame: ~54us low, then bus is pulled back to high and DHT
@@ -162,7 +162,7 @@ DHT_StatusTypeDef DHT_ReadSensor(DHT_ValuesTypeDef *values)
 
   /* Request sample - send a start signal */
   // NOTE: pin nb hardcoded to pin 6
-  // 0xFFFFCFFFF: MODE6 Input 
+  // 0xFFFFCFFFF: MODE6 Input
   // 0xFFFFDFFFF: MODE6 GPOutput
   // uint16_t buffer[41];
   uint16_t counter;
@@ -244,7 +244,7 @@ DHT_StatusTypeDef DHT_ReadSensor(DHT_ValuesTypeDef *values)
   //   // store counter value in buffer for debug
   //   buffer[i] = counter;
   // }
-  
+
   /* Read sampled data */
   /* Array is converted into 5 8-bit variables */
   uint8_t RH_HByte = 0;
@@ -392,7 +392,7 @@ DHT_StatusTypeDef DHT_ReadSensor_DMA(DHT_ValuesTypeDef *values)
 
 
 /**
-  * @brief  Input Capture callback in non blocking mode 
+  * @brief  Input Capture callback in non blocking mode
   * @param  htim : TIM IC handle
   * @retval None
   */
@@ -421,12 +421,12 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
   //   else if(uhCaptureIndex == 1)
   //   {
   //     /* Get the 2nd Input Capture value */
-  //     uwIC2Value2 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2); 
-      
+  //     uwIC2Value2 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
+
   //     /* Capture computation */
   //     if (uwIC2Value2 > uwIC2Value1)
   //     {
-  //       uwDiffCapture = (uwIC2Value2 - uwIC2Value1); 
+  //       uwDiffCapture = (uwIC2Value2 - uwIC2Value1);
   //     }
   //     else if (uwIC2Value2 < uwIC2Value1)
   //     {
@@ -437,11 +437,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
   //       uwDiffCapture = 0;
   //     }
   //     /* uwFrequency computation
-  //     TIM2 counter clock = RCC_Clocks.HCLK_Frequency */      
+  //     TIM2 counter clock = RCC_Clocks.HCLK_Frequency */
   //     uwFrequency = HAL_RCC_GetHCLKFreq()/ (uwDiffCapture + 1);
   //     uhCaptureIndex = 0;
   //   }
-    
+
   }
 }
 

@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    Templates/Inc/stm32l0xx_it.h 
+  * @file    Templates/Inc/stm32l0xx_it.h
   * @author  MCD Application Team
   * @version V1.7.0
   * @date    31-May-2016
@@ -41,7 +41,7 @@
 
 #ifdef __cplusplus
  extern "C" {
-#endif 
+#endif
 
 /* Includes ------------------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
@@ -65,3 +65,4 @@ void DMA1_Channel2_3_IRQHandler(void);
 #endif /* __STM32L0xx_IT_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+
