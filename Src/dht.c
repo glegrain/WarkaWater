@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    Src/dht.c
   * @author  Guillaume Legrain
-  * @version V0.1.0
+  * @version V0.1.1
   * @date    26-December-2016
   * @brief   This file includes the DHT11 sensor driver.
   ******************************************************************************
@@ -72,6 +72,7 @@ void DHT_GPIO_Init(void)
   HAL_GPIO_Init(DHT_DATA_GPIO_PORT, &GPIO_InitStruct);
 
   HAL_GPIO_WritePin(DHT_DATA_GPIO_PORT, DHT_DATA_PIN, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(DHT_DATA_GPIO_PORT, GPIO_PIN_1, GPIO_PIN_SET);
 
   // /* Timer init */
   // __HAL_RCC_TIM2_CLK_ENABLE();
@@ -166,46 +167,40 @@ DHT_StatusTypeDef DHT_ReadSensor(DHT_ValuesTypeDef *values)
   // uint16_t buffer[41];
   uint16_t counter;
   g_i = 41;
+
+  /*##-3- Start the Input Capture in polling mode ############################*/
+  HAL_TIM_IC_Start(&TimHandle, TIM_CHANNEL_2);
+
   /* Configure pin to output */
   // DHT_DATA_GPIO_PORT->MODER &= 0xFFFFDFFF;
   GPIO_ConfigureMode(DHT_DATA_GPIO_PORT, GPIO_PIN_1, GPIO_MODE_OUTPUT_PP);
   HAL_GPIO_WritePin(DHT_DATA_GPIO_PORT, GPIO_PIN_1, GPIO_PIN_RESET);
   HAL_Delay(DHT_WAKEUP_DELAY);
-  // HAL_GPIO_WritePin(DHT_DATA_GPIO_PORT, GPIO_PIN_1, GPIO_PIN_SET);
-  /* Configure pin to input */
-  // DHT_DATA_GPIO_PORT->MODER &= 0xFFFFCFFF; // function call is too slow with -O0
+  HAL_GPIO_WritePin(DHT_DATA_GPIO_PORT, GPIO_PIN_1, GPIO_PIN_SET);
+  /* Configure pin for Input Capture */
+  DHT_DATA_GPIO_PORT->MODER = 0xEBFFD4AB; // Pin1 to Alternate Function Mode
+  DHT_DATA_GPIO_PORT->AFR[0] = 0x00004420; // Pin1 to AF2
   // GPIO_ConfigureMode(DHT_DATA_GPIO_PORT, GPIO_PIN_1, GPIO_MODE_AF_PP);
-  GPIO_InitTypeDef  GPIO_InitStruct;
-  GPIO_InitStruct.Pin = GPIO_PIN_1;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF2_TIM2;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-  
-  /*##-3- Start the Input Capture in interrupt mode ##########################*/
-  if(HAL_TIM_IC_Start_IT(&TimHandle, TIM_CHANNEL_2) != HAL_OK)
-  {
-    /* Starting Error */
-    while(1);
-  }
 
   // /* Sample DATA using TIMER input capture to measure each pulse width */
-  // TODO
-  // wait for buffer to be filled
-  while (g_i < 42 );
-  
-  // TIMER test code
-  // if (HAL_TIM_Base_Start(&TimHandle) != HAL_OK) {
-  //   while (1);
-  // }
-  // while(g_i >= 0) {
-  //   // __HAL_TIM_SET_COUNTER(&TimHandle, 0x00000U);
-  //   // uint32_t start = __HAL_TIM_GET_COUNTER(&TimHandle);
-  //   HAL_Delay(500); 
-  //   // uint32_t stop = __HAL_TIM_GET_COUNTER(&TimHandle);
-  //   printf("running: g_i  = %u\n", g_i);
-  // }
+  while (g_i < 42) {
+    // TODO: Add timeout
+    if (TIM2->SR & TIM_SR_CC2IF) {
+      if (uhCaptureIndex == 0) {
+        buffer[g_i] = TIM2->CNT;
+        TIM2->SR = 0U; // Reset TIM2 FLAGS
+        // __HAL_TIM_CLEAR_FLAG(&TimHandle, TIM_FLAG_CC2);
+        g_i--;
+        uhCaptureIndex = 1;
+      } else {
+        TIM2->SR = 0U;  // Reset TIM2 FLAGS
+        // __HAL_TIM_CLEAR_FLAG(&TimHandle, TIM_FLAG_CC2);
+        __HAL_TIM_SET_COUNTER(&TimHandle, 0U);
+        uhCaptureIndex = 0;
+      }
+    }
+  }
+  HAL_TIM_IC_Stop(&TimHandle, TIM_CHANNEL_2); // TODO proper reset
 
   // /*
   //  * Sample data with TIM measurments
@@ -305,6 +300,96 @@ DHT_StatusTypeDef DHT_ReadSensor(DHT_ValuesTypeDef *values)
 
 }
 
+DHT_StatusTypeDef DHT_ReadSensor_IT(DHT_ValuesTypeDef *values)
+{
+  // NOTE: Only seems to be working for the first measurment
+  // TODO: Fixme
+  g_i = 40;
+  uhCaptureIndex = 1;
+
+  /*##-3- Start the Input Capture in Interrupt mode ##########################*/
+  HAL_TIM_IC_Start_IT(&TimHandle, TIM_CHANNEL_2);
+
+  /* Configure pin to output */
+  // DHT_DATA_GPIO_PORT->MODER &= 0xFFFFDFFF;
+  GPIO_ConfigureMode(DHT_DATA_GPIO_PORT, GPIO_PIN_1, GPIO_MODE_OUTPUT_PP);
+  HAL_GPIO_WritePin(DHT_DATA_GPIO_PORT, GPIO_PIN_1, GPIO_PIN_RESET);
+  HAL_Delay(DHT_WAKEUP_DELAY);
+  HAL_GPIO_WritePin(DHT_DATA_GPIO_PORT, GPIO_PIN_1, GPIO_PIN_SET);
+  /* Configure pin for Input Capture */
+  DHT_DATA_GPIO_PORT->MODER = 0xEBFFD4AB; // Pin1 to Alternate Function Mode
+  DHT_DATA_GPIO_PORT->AFR[0] = 0x00004420; // Pin1 to AF2
+
+  /* Wait for buffer to be filled by interrupt */
+  while (g_i < 42);
+
+  /* Read sampled data */
+  /* Array is converted into 5 8-bit variables */
+  uint8_t RH_HByte = 0;
+  uint8_t RH_LByte = 0;
+  uint8_t T_HByte  = 0;
+  uint8_t T_LByte  = 0;
+  uint8_t checksum = 0;
+
+  #define TIME_LIMIT 48 /* midpoint between 72us and 24us */
+  // #define TIME_LIMIT 4 /* Found with trial and error */
+  for (int i = 0; i < 8; i++) {
+    int bit = 0;
+    if (buffer[i+32] > TIME_LIMIT) bit = 1;
+    RH_HByte += bit << i; // Shift bit is equivalent to power of 2
+  }
+
+  for (int i = 0; i < 8; i++) {
+    int bit = 0;
+    if (buffer[i+24] > TIME_LIMIT) bit = 1;
+    RH_LByte += bit << i;
+  }
+
+  for (int i = 0; i < 8; i++) {
+    int bit = 0;
+    if (buffer[i+16] > TIME_LIMIT) bit = 1;
+    T_HByte += bit << i;
+  }
+
+    for (int i = 0; i < 8; i++) {
+    int bit = 0;
+    if (buffer[i+8] > TIME_LIMIT) bit = 1;
+    T_LByte += bit << i;
+  }
+
+  for (int i = 0; i < 8; i++) {
+    int bit = 0;
+    if (buffer[i] > TIME_LIMIT) bit = 1;
+    checksum += bit << i;
+  }
+
+  /* Store sensor values to destination structure */
+  values->RelativeHumidityIntegral = RH_HByte;
+  values->RelativeHumidityFractional = RH_LByte;
+  values->TemperatureIntegral = T_HByte;
+  values->TemperatureFractional = T_LByte;
+
+  /* Verify received data */
+  if (checksum != ((RH_HByte + RH_LByte + T_HByte + T_LByte) & 0xFF)) {
+    return DHT_CHECKSUM_ERROR;
+  }
+
+  return DHT_OK;
+}
+
+DHT_StatusTypeDef DHT_ReadSensor_DMA(DHT_ValuesTypeDef *values)
+{
+  // TODO
+  /*##-3- Start the Input Capture in DMA mode ################################*/
+  if(HAL_TIM_IC_Start_DMA(&TimHandle, TIM_CHANNEL_2, buffer, 42) != HAL_OK)
+  {
+    /* Starting Error */
+    while(1);
+  }
+
+  return DHT_TIMEOUT_ERROR;
+}
+
 
 /**
   * @brief  Input Capture callback in non blocking mode 
@@ -359,3 +444,4 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
     
   }
 }
+

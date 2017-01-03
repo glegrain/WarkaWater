@@ -164,6 +164,18 @@ void TIM2_IRQHandler(void)
   HAL_TIM_IRQHandler(&TimHandle);
 
 }
+
+void DMA1_Channel2_3_IRQHandler(void)
+{
+  /* Call IRQ Handler */
+  /* - Disable the transfer error interrupt
+     - Clear the transfer error flag
+     - Update error code
+     - Change the DMA state
+     - Call to Transfer Callbacks
+  */
+  HAL_DMA_IRQHandler(TimHandle.hdma[TIM_DMA_ID_CC2]);
+}
 /**
   * @}
   */ 
