@@ -54,10 +54,11 @@
 #define USARTx_RX_AF                     GPIO_AF4_USART2
 
 /* Definition for DHT clock resources */
-#define DHT_CLK_ENABLE()                 __HAL_RCC_GPIOA_CLK_ENABLE()
+#define DHT_GPIO_CLK_ENABLE()            __HAL_RCC_GPIOA_CLK_ENABLE()
 /* Definition for DHTxx Pins */
-#define DHT_DATA_PIN                     GPIO_PIN_6
+#define DHT_DATA_PIN                     GPIO_PIN_1
 #define DHT_DATA_GPIO_PORT               GPIOA
+#define DHT_DATA_AF                      GPIO_AF2_TIM2;
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 

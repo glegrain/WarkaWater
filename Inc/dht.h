@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    Inc/dht.h
   * @author  Guillaume Legrain
-  * @version V0.1.1
+  * @version V0.1.2
   * @date    26-December-2016
   * @brief   This file includes the DHT11 sensor driver.
   ******************************************************************************
@@ -42,7 +42,9 @@ typedef struct
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-void DHT_GPIO_Init(void);
+void DHT_Init(void);
+void DHT_Init_IT(void);
+void DHT_Init_DMA(void);
 DHT_StatusTypeDef DHT_ReadSensor(DHT_ValuesTypeDef *values);
 DHT_StatusTypeDef DHT_ReadSensor_IT(DHT_ValuesTypeDef *values);
 DHT_StatusTypeDef DHT_ReadSensor_DMA(DHT_ValuesTypeDef *values);

@@ -46,6 +46,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l0xx_hal.h"
+#include "main.h"
 
 /** @addtogroup STM32L0xx_HAL_Driver
   * @{
@@ -87,67 +88,6 @@ void HAL_MspDeInit(void)
 {
   /* NOTE : This function is eventually modified by the user */
 
-}
-
-void HAL_TIM_IC_MspInit(TIM_HandleTypeDef *htim)
-{
-  GPIO_InitTypeDef  GPIO_InitStruct;
-  static DMA_HandleTypeDef  hdma_tim;
-
-  /*##-1- Enable peripherals and GPIO Clocks #################################*/
-  /* TIM2 Peripheral clock enable */
-  __HAL_RCC_TIM2_CLK_ENABLE();
-
-  /* Enable GPIO channels Clock */
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-
-  /* Enable DMA1 clock */
-  __HAL_RCC_DMA1_CLK_ENABLE();
-
-  /*##-2- Configure peripheral GPIO ##########################################*/
-  /* Configure (TIM2_Channel2) in Alternate function, push-pull and High speed */
-  GPIO_InitStruct.Pin = GPIO_PIN_1;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF2_TIM2;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-
-  /*##-2- Configure the NVIC for TIMx ########################################*/
-  /* Set the TIM2 global Interrupt */
-  HAL_NVIC_SetPriority(TIM2_IRQn, 0, 1);
-
-  /* Enable the TIM2 global Interrupt */
-  HAL_NVIC_EnableIRQ(TIM2_IRQn);
-
-  /*##-3- Configure the DMA stream ###########################################*/
-  /* Set the parameters to be configured */
-  /*  - Memory address is automatically incremented by 16-bit
-   *  - Circular mode: after the last transfer, the DMA_CNDTRx register is
-   *     automatically reloaded with the initialy programmed value.
-   */
-  hdma_tim.Init.Request             = DMA_REQUEST_8;
-  hdma_tim.Instance                 = DMA1_Channel3;
-  hdma_tim.Init.Direction           = DMA_PERIPH_TO_MEMORY;
-  hdma_tim.Init.PeriphInc           = DMA_PINC_DISABLE;
-  hdma_tim.Init.MemInc              = DMA_MINC_ENABLE;
-  hdma_tim.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-  hdma_tim.Init.MemDataAlignment    = DMA_PDATAALIGN_HALFWORD;
-  hdma_tim.Init.Mode                = DMA_CIRCULAR;
-  hdma_tim.Init.Priority            = DMA_PRIORITY_HIGH;
-
-  // NOTE: Channel 2 or 3?
-  /* Link hdma_tim to hdma[TIM_DMA_ID_CC2] (channel2) */
-  __HAL_LINKDMA(htim, hdma[TIM_DMA_ID_CC2], hdma_tim);
-
-  HAL_DMA_Init(htim->hdma[TIM_DMA_ID_CC2]);
-
-  /*##-4- Configure the NVIC for DMA #########################################*/
-  /* NVIC configuration for DMA transfer complete interrupt */
-   HAL_NVIC_SetPriority(DMA1_Channel2_3_IRQn, 0, 0);
-   HAL_NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
 }
 
 /**
