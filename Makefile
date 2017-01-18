@@ -31,6 +31,7 @@ OBJECTS  += stm32l0xx_it.o
 OBJECTS  += stm32l0xx_hal_msp.o
 OBJECTS  += dht.o
 OBJECTS  += dewpoint.o
+OBJECTS  += ms5540c.o
 
 OBJECTS  += stm32l0xx_hal.o
 # OBJECTS  += stm32l0xx_hal_adc.o
@@ -70,7 +71,7 @@ OBJECTS  += stm32l0xx_hal_rcc.o
 # OBJECTS  += stm32l0xx_hal_smartcard.o
 # OBJECTS  += stm32l0xx_hal_smartcard_ex.o
 # OBJECTS  += stm32l0xx_hal_smbus.o
-# OBJECTS  += stm32l0xx_hal_spi.o
+OBJECTS  += stm32l0xx_hal_spi.o
 OBJECTS  += stm32l0xx_hal_tim.o
 # OBJECTS  += stm32l0xx_hal_tim_ex.o
 # OBJECTS  += stm32l0xx_hal_tsc.o
@@ -162,8 +163,7 @@ out.elf: $(OBJECTS)
 
 debug: out.elf
 #	arm-none-eabi-gdb -tui --eval-command="target extended-remote :4242" out.elf
-	arm-none-eabi-gdb -tui --eval-command="target extended-remote :3333" out.elf \
-	--command=gdb-breakpoints
+	arm-none-eabi-gdb -tui --eval-command="target extended-remote :3333" out.elf
 
 run: out.elf
 	$(OPENOCD_DIR)/bin/openocd \

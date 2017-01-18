@@ -197,7 +197,7 @@ DHT_StatusTypeDef DHT_ReadSensor(DHT_ValuesTypeDef *values)
   // NOTE: Requires code optimization to use LL Drivers or a SysClock > 4.2MHz
   // LL_GPIO_SetPinMode(DHT_DATA_GPIO_PORT, DHT_DATA_PIN, LL_GPIO_MODE_ALTERNATE);
   // LL_GPIO_SetAFPin_0_7(DHT_DATA_GPIO_PORT, DHT_DATA_PIN, LL_GPIO_AF_2);
-  DHT_DATA_GPIO_PORT->MODER = 0xEBFFD4AB; // Pin1 to Alternate Function Mode
+  DHT_DATA_GPIO_PORT->MODER = 0xEBFBD4AB; // Pin1 to Alternate Function Mode
   DHT_DATA_GPIO_PORT->AFR[0] = 0x00004420; // Pin1 to AF2
 
   /* Sample DATA using TIMER input capture to measure each pulse width */

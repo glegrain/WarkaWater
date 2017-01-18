@@ -38,6 +38,7 @@
 #include "main.h"
 #include "dht.h"
 #include "dewpoint.h"
+#include "ms5540c.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -111,6 +112,11 @@ int main(void)
   /* Configure DHT11 Humidity & Temperature sensor */
   DHT_Init();
 
+  if (MS5540C_Init() != HAL_OK)
+  {
+    Error_Handler();
+  }
+
   DHT_ValuesTypeDef sensorValues;
   double dewpoint;
 
@@ -119,6 +125,7 @@ int main(void)
   {
     HAL_GPIO_TogglePin(LED2_GPIO_PORT, LED2_PIN);
     HAL_Delay(1000);
+    MS5540C_Acquire();
     DHT_StatusTypeDef dht_status = DHT_ReadSensor(&sensorValues);
     if (dht_status != DHT_OK) {
       printf("DHT Error: %d\n", dht_status);
@@ -166,7 +173,9 @@ static void SystemClock_Config(void)
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
 
   /* Enable MSI Oscillator */
-  RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_LSE
+                                          | RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.LSEState            = RCC_LSE_ON;
   RCC_OscInitStruct.MSIState            = RCC_MSI_ON;
   RCC_OscInitStruct.MSIClockRange       = RCC_MSIRANGE_6; /* MSI = 4.194 MHz */
   RCC_OscInitStruct.MSICalibrationValue = 0x00;
