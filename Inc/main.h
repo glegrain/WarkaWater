@@ -53,6 +53,10 @@
 #define USARTx_RX_GPIO_PORT              GPIOA
 #define USARTx_RX_AF                     GPIO_AF4_USART2
 
+/* Definition for RTC configuration */
+#define RTC_ASYNCH_PREDIV  0x7F
+#define RTC_SYNCH_PREDIV   0x00FF
+
 /* Definition for DHT clock resources */
 #define DHT_GPIO_CLK_ENABLE()            __HAL_RCC_GPIOA_CLK_ENABLE()
 /* Definition for DHTxx Pins */
@@ -83,6 +87,7 @@
 
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
+void Error_Handler(void);
 
 #endif /* __MAIN_H */
 

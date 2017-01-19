@@ -45,12 +45,18 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef UartHandle;
+RTC_HandleTypeDef RtcHandle;
+
+/* Buffer used for displaying Time */
+uint8_t aShowTime[50] = {0};
+
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
 static void SystemClock_Config32MHz(void);
-static void Error_Handler(void);
 static void LED_Init(void);
 static void PB_Init(ButtonMode_TypeDef ButtonMode);
+static void RTC_Config(void);
+static void RTC_TimeToString(uint8_t* showtime);
 
 /* Private functions ---------------------------------------------------------*/
 // void putc(int p, FILE *)
@@ -109,9 +115,13 @@ int main(void)
     Error_Handler();
   }
 
+  /* Configure RTC */
+  RTC_Config();
+
   /* Configure DHT11 Humidity & Temperature sensor */
   DHT_Init();
 
+  /* Configure MS5540C Pressure & Temperature sensor */
   if (MS5540C_Init() != HAL_OK)
   {
     Error_Handler();
@@ -125,11 +135,13 @@ int main(void)
   {
     HAL_GPIO_TogglePin(LED2_GPIO_PORT, LED2_PIN);
     HAL_Delay(1000);
+    RTC_TimeToString(aShowTime);
     MS5540C_Acquire();
     DHT_StatusTypeDef dht_status = DHT_ReadSensor(&sensorValues);
     if (dht_status != DHT_OK) {
       printf("DHT Error: %d\n", dht_status);
     } else {
+      printf("time: %s\n", aShowTime);
       printf("Sensor values: %d.%d%%, %d.%dºC\n",
           sensorValues.RelativeHumidityIntegral,
           sensorValues.RelativeHumidityFractional,
@@ -139,9 +151,6 @@ int main(void)
                           (double) sensorValues.RelativeHumidityIntegral);
       printf("dewpoint: %dºC\n", (int) dewpoint);
     }
-    // fputc("c", 1);
-    // char toto[10] = "chocola\n";
-    // HAL_UART_Transmit(&UartHandle, (uint8_t *) toto, 9, 200);
   }
 }
 
@@ -254,12 +263,47 @@ static void SystemClock_Config32MHz(void)
   HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1);
 }
 
+static void RTC_Config(void)
+{
+  /* Configure the RTC peripheral */
+  RtcHandle.Instance            = RTC;
+  RtcHandle.Init.HourFormat     = RTC_HOURFORMAT_24;
+  RtcHandle.Init.AsynchPrediv   = RTC_ASYNCH_PREDIV;
+  RtcHandle.Init.SynchPrediv    = RTC_SYNCH_PREDIV;
+  RtcHandle.Init.OutPut         = RTC_OUTPUT_DISABLE;
+  RtcHandle.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+  RtcHandle.Init.OutPutType     = RTC_OUTPUT_TYPE_OPENDRAIN;
+  if (HAL_RTC_Init(&RtcHandle) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/**
+  * @brief  Print the current time into a buffer.
+  * @param  showtime : pointer to buffer
+  * @retval None
+  */
+static void RTC_TimeToString(uint8_t* showtime)
+{
+  RTC_DateTypeDef sDate;
+  RTC_TimeTypeDef sTime;
+
+  /* Get the RTC current Time */
+  HAL_RTC_GetTime(&RtcHandle, &sTime, RTC_FORMAT_BIN);
+  /* Get the RTC current Date */
+  HAL_RTC_GetDate(&RtcHandle, &sDate, RTC_FORMAT_BIN);
+
+  /* Display time Format : hh:mm:ss */
+  sprintf((char *) showtime, "%.2d:%.2d:%.2d", sTime.Hours, sTime.Minutes, sTime.Seconds);
+}
+
 /**
   * @brief  This function is executed in case of error occurrence.
   * @param  None
   * @retval None
   */
-static void Error_Handler(void)
+void Error_Handler(void)
 {
   /* User may add here some code to deal with this error */
   while(1)

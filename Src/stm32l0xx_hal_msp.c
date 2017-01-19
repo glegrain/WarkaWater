@@ -91,6 +91,48 @@ void HAL_MspDeInit(void)
 }
 
 /**
+  * @brief RTC MSP Initialization
+  * @param hrtc: RTC handle pointer
+  * @retval None
+  */
+void HAL_RTC_MspInit(RTC_HandleTypeDef *hrtc)
+{
+  RCC_OscInitTypeDef RCC_OscInitStruct;
+  RCC_PeriphCLKInitTypeDef  PeriphClkInitStruct;
+
+  /*##-1- Configue LSE as RTC clock source ###################################*/
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.PLL.PLLState   = RCC_PLL_NONE;
+  RCC_OscInitStruct.LSEState       = RCC_LSE_ON;
+  RCC_OscInitStruct.LSIState       = RCC_LSI_OFF;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RTC;
+  PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /*##-2- Enable RTC peripheral Clock ########################################*/
+  /* Enable RTC Clock */
+  __HAL_RCC_RTC_ENABLE();
+}
+
+/**
+  * @brief RTC MSP De-Initialization
+  * @param hrtc: RTC handle pointer
+  * @retval None
+  */
+void HAL_RTC_MspDeInit(RTC_HandleTypeDef *hrtc)
+{
+  /*##-1- Reset peripherals ##################################################*/
+   __HAL_RCC_RTC_DISABLE();
+}
+/**
   * @brief SPI MSP Initialization
   *        This function configures the hardware resources used in this example: 
   *           - Peripheral's clock enable
@@ -110,7 +152,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi)
   /* Enable SPI clock */
   SPIx_CLK_ENABLE();
 
-  /*##-2- Configure peripheral GPIO ##########################################*/  
+  /*##-2- Configure peripheral GPIO ##########################################*/
   /* SPI SCK GPIO pin configuration  */
   GPIO_InitStruct.Pin       = SPIx_SCK_PIN;
   GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
