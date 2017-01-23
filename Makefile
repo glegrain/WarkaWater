@@ -8,10 +8,10 @@ OBJDUMP    = arm-none-eabi-objdump
 SIZE       = arm-none-eabi-size
 GDB        = arm-none-eabi-gdb
 
-OPENOCD_DIR = /Applications/GNU\ ARM\ Eclipse/OpenOCD/0.10.0-201610281609-dev
+OPENOCD_DIR = /usr/local/Cellar/open-ocd/0.10.0
 
 ## STM32Cube software path
-CUBE_DIR   = ../STM32Cube_FW_L0_V1.7.0
+CUBE_DIR   = .
 
 ################################################################################
 
@@ -106,7 +106,6 @@ VPATH    += :$(CUBE_DIR)/Drivers/BSP/STM32L0xx_Nucleo
 VPATH    += :$(CUBE_DIR)/Drivers/CMSIS/Device/ST/STM32L0xx/Source/Templates/gcc/
 
 # Include Path for All Headers
-INCLUDES := -I.
 INCLUDES += -I./Inc
 INCLUDES += -I$(CUBE_DIR)/Drivers/CMSIS/Device/ST/STM32L0xx/Include
 INCLUDES += -I$(CUBE_DIR)/Drivers/CMSIS/Include
@@ -143,14 +142,10 @@ OBJDUMPFLAGS = -St
 all: out.elf
 
 out.elf: $(OBJECTS)
-	#$(CC) $(CFLAGS) $(LDFLAGS) startup_$(MCU_LC).s $^ -o $@
 	@echo "[LD]      out.elf"
 	$(LD) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJECTS)
 	# $(OBJDUMP) $(OBJDUMPFLAGS) out.elf > out.list
 	$(SIZE) out.elf
-
-# main.out: $(LIBS) $(OBJS)
-# 	$(LD) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 %.o: %.c
 	@echo "[CC]      $(notdir $<)"
@@ -173,6 +168,7 @@ run: out.elf
 	-c "reset halt" \
 	-c "flash write_image erase $(CURDIR)/out.elf" \
 	-c "reset run"
+
 clean:
 	rm -f *.o
 	rm -f *.d
