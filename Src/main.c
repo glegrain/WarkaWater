@@ -44,7 +44,6 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-UART_HandleTypeDef UartHandle;
 RTC_HandleTypeDef RtcHandle;
 
 /* Buffer used for displaying Time */
@@ -54,17 +53,10 @@ uint8_t aShowTime[50] = {0};
 static void SystemClock_Config(void);
 static void SystemClock_Config32MHz(void);
 static void LED_Init(void);
-static void PB_Init(ButtonMode_TypeDef ButtonMode);
 static void RTC_Config(void);
 static void RTC_TimeToString(uint8_t* showtime);
 
 /* Private functions ---------------------------------------------------------*/
-// void putc(int p, FILE *)
-void _ttywrch(int ch) {
-  // HAL_UART_Transmit_IT(&UartHandle, (uint8_t*) &ch, 1);
-  HAL_UART_Transmit(&UartHandle, (uint8_t *) &ch, 1, 200);
-  // return ch;
-}
 
 /**
   * @brief  Main program
@@ -90,30 +82,6 @@ int main(void)
 
   /* Configure LED2 */
   LED_Init();
-
-  /* Configure Button B1 */
-  PB_Init(BUTTON_MODE_EXTI);
-
-  /*##-1- Configure the UART peripheral ######################################*/
-  /* Put the USART peripheral in the Asynchronous mode (UART Mode) */
-  /* UART2 configured as follow:
-      - Word Length = 8 Bits
-      - Stop Bit = One Stop bit
-      - Parity = None
-      - BaudRate = 9600 baud
-      - Hardware flow control disabled (RTS and CTS signals) */
-  UartHandle.Instance        = USART2;
-  UartHandle.Init.BaudRate   = 9600;
-  UartHandle.Init.WordLength = UART_WORDLENGTH_8B;
-  UartHandle.Init.StopBits   = UART_STOPBITS_1;
-  UartHandle.Init.Parity     = UART_PARITY_NONE;
-  UartHandle.Init.HwFlowCtl  = UART_HWCONTROL_NONE;
-  UartHandle.Init.Mode       = UART_MODE_TX_RX;
-
-  if(HAL_UART_Init(&UartHandle) != HAL_OK)
-  {
-    Error_Handler();
-  }
 
   /* Configure RTC */
   RTC_Config();
@@ -352,78 +320,6 @@ void LED_Init(void)
 
   HAL_GPIO_Init(LED2_GPIO_PORT, &GPIO_InitStruct);
   HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_RESET);
-}
-
-/**
-  * @brief  Configures Button GPIO and EXTI Line.
-  * @param  ButtonMode: Specifies Button mode.
-  *   This parameter can be one of following parameters:
-  *     @arg  BUTTON_MODE_GPIO: Button will be used as simple IO
-  *     @arg BUTTON_MODE_EXTI: Button will be connected to EXTI line with interrupt
-  *                            generation capability
-  * @retval None
-  */
-void PB_Init(ButtonMode_TypeDef ButtonMode)
-{
-   GPIO_InitTypeDef GPIO_InitStruct;
-
-  /* Enable the BUTTON Clock */
-  USER_BUTTON_GPIO_CLK_ENABLE();
-  __HAL_RCC_SYSCFG_CLK_ENABLE();
-
-  if(ButtonMode == BUTTON_MODE_GPIO)
-  {
-    /* Configure Button pin as input */
-    GPIO_InitStruct.Pin = USER_BUTTON_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    HAL_GPIO_Init(USER_BUTTON_GPIO_PORT, &GPIO_InitStruct);
-  }
-
-  if(ButtonMode == BUTTON_MODE_EXTI)
-  {
-    /* Configure Button pin as input with External interrupt */
-    GPIO_InitStruct.Pin = USER_BUTTON_PIN;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-    HAL_GPIO_Init(USER_BUTTON_GPIO_PORT, &GPIO_InitStruct);
-
-    /* Enable and set Button EXTI Interrupt to the lowest priority */
-    NVIC_SetPriority((IRQn_Type)(USER_BUTTON_EXTI_IRQn), 0x03);
-    HAL_NVIC_EnableIRQ((IRQn_Type)((USER_BUTTON_EXTI_IRQn)));
-  }
-}
-
-
-void HAL_UART_MspInit(UART_HandleTypeDef *huart)
-{
-  GPIO_InitTypeDef  GPIO_InitStruct;
-
-  /*##-1- Enable peripherals and GPIO Clocks #################################*/
-
-  /* Enable GPIO TX/RX clock */
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-
-  /* Enable USART2 clock */
-  __HAL_RCC_USART2_CLK_ENABLE();
-
-  /*##-2- Configure peripheral GPIO ##########################################*/
-
-  /* UART TX GPIO pin configuration  */
-  GPIO_InitStruct.Pin       = USARTx_TX_PIN;
-  GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull      = GPIO_NOPULL;
-  GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_HIGH;
-  GPIO_InitStruct.Alternate = USARTx_TX_AF;
-
-  HAL_GPIO_Init(USARTx_TX_GPIO_PORT, &GPIO_InitStruct);
-
-  /* UART RX GPIO pin configuration  */
-  GPIO_InitStruct.Pin = USARTx_RX_PIN;
-  GPIO_InitStruct.Alternate = USARTx_RX_AF;
-
-  HAL_GPIO_Init(USARTx_RX_GPIO_PORT, &GPIO_InitStruct);
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
