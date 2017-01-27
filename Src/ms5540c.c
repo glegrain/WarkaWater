@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    Src/ms5540c.c
   * @author  Guillaume Legrain
-  * @version V0.1.0
+  * @version V0.1.1
   * @date    12-January-2017
   * @brief   This file includes the MS5540C pressure sensor driver.
   ******************************************************************************
@@ -27,7 +27,6 @@ HAL_StatusTypeDef MS5540C_Init(void)
   HAL_StatusTypeDef status;
 
   /*##- Configure the SPI peripheral #########################################*/
-  /* TODO:  Initialize SPI low level resources with HAL_SPI_MspInit() */
   hspi.Instance               = SPIx;
   hspi.Init.Mode              = SPI_MODE_MASTER;
   hspi.Init.Direction         = SPI_DIRECTION_2LINES;
@@ -39,7 +38,6 @@ HAL_StatusTypeDef MS5540C_Init(void)
   hspi.Init.FirstBit          = SPI_FIRSTBIT_MSB;
   hspi.Init.TIMode            = SPI_TIMODE_DISABLE;
   hspi.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLE;
-  // hspi.Init.CRCPolynomial     = 7;
   hspi.State                  = HAL_SPI_STATE_RESET;
 
   status = HAL_SPI_Init(&hspi);
@@ -113,9 +111,6 @@ HAL_StatusTypeDef MS5540C_Acquire(void)
   HAL_SPI_TransmitReceive(&hspi, (uint8_t *) &txBuffer, (uint8_t *) &rxBuffer, 1, 5000);
   word4 = rxBuffer;
 
-  // test calibration data
-  // word1 = 46940; word2 = 40217; word3 = 25172; word4 = 47212;
-
   /*##-3- Convert calibration data into coefficients #########################*/
   uint16_t c1 = (word1 >> 1) & 0x7FFF; // Pressure sensitivity
   uint16_t c2 = ((word3 & 0x003F) << 6) | (word4 & 0x003F); // Pressure offset
@@ -156,9 +151,6 @@ HAL_StatusTypeDef MS5540C_Acquire(void)
   // uint16_t d2 = rxBuffer;
   uint16_t d2 = (rxBuffer << 1) & 0xFFFF;
 
-  // test values
-  // d1 = 16460; d2 = 27856;
-
   /* Calculate calibration temperature */
   int32_t ut1 = 8 * c5 + 20224;
 
@@ -174,7 +166,6 @@ HAL_StatusTypeDef MS5540C_Acquire(void)
   /* Calibration temperature compensated pressure */
   double pressure = (((x * 10) >> 5) + 2500) / 10.0;
 
-  // TODO: CHeck math is correct with example values
   printf("words: %u, %u, %u, %u\n", word1, word2, word3, word4);
   printf("coefs: %u, %u, %u, %u, %u, %u\n", c1, c2, c3, c4, c5, c6);
   printf("d1 = %u, d2 = %u\n", d1, d2);

@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    Inc/ms5540c.h
   * @author  Guillaume Legrain
-  * @version V0.1.0
+  * @version V0.1.1
   * @date    12-January-2017
   * @brief   This file includes the MS5540C pressure sensor driver.
   ******************************************************************************
