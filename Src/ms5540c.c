@@ -164,7 +164,7 @@ HAL_StatusTypeDef MS5540C_Acquire(void)
 
   /* Calculate actual temperature */
   int32_t dT = d2 - ut1;
-  int32_t temperature = 200 + ((dT * (c6 + 50)) >> 10);
+  double temperature = (200 + ((dT * (c6 + 50)) >> 10)) / 10.0;
 
   /* Calculate pressure offset at actual temperature */
   int32_t offset = (c2 * 4) + (((c4 - 512) * dT) >> 12);
@@ -172,14 +172,14 @@ HAL_StatusTypeDef MS5540C_Acquire(void)
   int32_t sensitivity = c1 + ((c3 * dT) >> 10) + 24576;
   int32_t x = (sensitivity * (d1 - 7168) >> 14) - offset;
   /* Calibration temperature compensated pressure */
-  int32_t pressure = ((x * 10) >> 5) + 2500;
+  double pressure = (((x * 10) >> 5) + 2500) / 10.0;
 
   // TODO: CHeck math is correct with example values
   printf("words: %u, %u, %u, %u\n", word1, word2, word3, word4);
   printf("coefs: %u, %u, %u, %u, %u, %u\n", c1, c2, c3, c4, c5, c6);
   printf("d1 = %u, d2 = %u\n", d1, d2);
   printf("ut1 = %ld, dT = %ld, \n", ut1, dT);
-  printf("temperature = %ld *.1C, pressure = %ld *.1mbar\n", temperature, pressure);
+  printf("temperature = %.1fºC, pressure = %.1f mbar\n", temperature, pressure);
 
   return HAL_OK;
 }
