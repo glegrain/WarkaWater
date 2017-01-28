@@ -2,9 +2,9 @@
   ******************************************************************************
   * @file    Src/dht.c
   * @author  Guillaume Legrain
-  * @version V0.1.2
-  * @date    26-December-2016
-  * @brief   This file includes the DHT11 sensor driver.
+  * @version V0.2.0
+  * @date    28-January-2017
+  * @brief   This file includes the DHT11 and DHT22 sensor driver.
   ******************************************************************************
   */
 
@@ -23,6 +23,8 @@
 #define GPIO_MODE             ((uint32_t)0x00000003U)
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+DHT_ModelTypeDef Model;
+
 /* Timer handler declaration */
 TIM_HandleTypeDef      TimHandle;
 
@@ -52,9 +54,11 @@ void GPIO_ConfigureMode(GPIO_TypeDef  *GPIOx, uint32_t Pin, uint32_t Mode)
 // Pin 3 --> GND
 // One 100nF decoupling cap can be added between VDD and GND
 
-void DHT_Init(void)
+void DHT_Init(DHT_ModelTypeDef model)
 {
   GPIO_InitTypeDef  GPIO_InitStruct;
+
+  Model = model;
 
   /*##-1- Enable peripherals and GPIO Clocks #################################*/
   /* TIM2 Peripheral clock enable */
@@ -103,9 +107,9 @@ void DHT_Init(void)
 
 }
 
-void DHT_Init_IT(void)
+void DHT_Init_IT(DHT_ModelTypeDef model)
 {
-  DHT_Init();
+  DHT_Init(model);
   /*##- Configure the NVIC for TIMx ##########################################*/
   /* Set the TIM2 global Interrupt */
   HAL_NVIC_SetPriority(TIM2_IRQn, 0, 1);
@@ -114,14 +118,14 @@ void DHT_Init_IT(void)
   HAL_NVIC_EnableIRQ(TIM2_IRQn);
 }
 
-void DHT_Init_DMA(void)
+void DHT_Init_DMA(DHT_ModelTypeDef model)
 {
   static DMA_HandleTypeDef  hdma_tim;
 
   /* Enable DMA1 clock */
   __HAL_RCC_DMA1_CLK_ENABLE();
 
-  DHT_Init();
+  DHT_Init(model);
 
   /*##- Configure the DMA stream #############################################*/
   /* Set the parameters to be configured */
@@ -286,51 +290,54 @@ DHT_StatusTypeDef decodeBuffer(DHT_ValuesTypeDef *values, uint16_t *buffer,
   // if high time > 24us --> 0b1
   // else if high time < 70us --> 0b0
 
-  /* Array is converted into 5 8-bit variables */
-  uint8_t RH_HByte = 0;
-  uint8_t RH_LByte = 0;
-  uint8_t T_HByte  = 0;
-  uint8_t T_LByte  = 0;
-  uint8_t checksum = 0;
+  /* Array is converted into two 16-bit variables + 8-bit checksum */
+  uint16_t relative_humidity = 0;
+  uint16_t temperature       = 0;
+  uint8_t checksum           = 0;
 
-  for (int i = 0; i < 8; i++) {
-    int bit = 0;
-    if (buffer[i+32] > TIME_LIMIT) bit = 1;
-    RH_HByte += bit << i; // Shift bit is equivalent to power of 2
-  }
+  /* temporary bit storage */
+  uint8_t bit;
+  /* temporary sum */
+  uint8_t sum;
 
-  for (int i = 0; i < 8; i++) {
-    int bit = 0;
+  for (uint8_t i = 0; i < 16; i++)
+  {
+    bit = 0;
     if (buffer[i+24] > TIME_LIMIT) bit = 1;
-    RH_LByte += bit << i;
+    relative_humidity += bit << i; // Shift bit is equivalent to power of 2
   }
 
-  for (int i = 0; i < 8; i++) {
-    int bit = 0;
-    if (buffer[i+16] > TIME_LIMIT) bit = 1;
-    T_HByte += bit << i;
-  }
-
-    for (int i = 0; i < 8; i++) {
-    int bit = 0;
+  for (uint8_t i = 0; i < 16; i++)
+  {
+    bit = 0;
     if (buffer[i+8] > TIME_LIMIT) bit = 1;
-    T_LByte += bit << i;
+    temperature += bit << i;
   }
 
-  for (int i = 0; i < 8; i++) {
-    int bit = 0;
+  for (uint8_t i = 0; i < 8; i++)
+  {
+    bit = 0;
     if (buffer[i] > TIME_LIMIT) bit = 1;
     checksum += bit << i;
   }
 
   /* Store sensor values to destination structure */
-  values->RelativeHumidityIntegral = RH_HByte;
-  values->RelativeHumidityFractional = RH_LByte;
-  values->TemperatureIntegral = T_HByte;
-  values->TemperatureFractional = T_LByte;
+  if (Model == DHT11)
+  {
+    /* DHT11 does not provide fractional precision */
+    values->RelativeHumidity = relative_humidity >> 8;
+    values->Temperature = temperature >> 8;
+  }
+  else
+  {
+    values->RelativeHumidity = relative_humidity * 0.1;
+    values->Temperature = temperature * 0.1;
+  }
 
   /* Verify received data */
-  if (checksum != ((RH_HByte + RH_LByte + T_HByte + T_LByte) & 0xFF))
+  sum = ((uint8_t) relative_humidity) + (relative_humidity >> 8) +
+        ((uint8_t) temperature) + (temperature >> 8);
+  if (checksum != (sum & 0xFF))
   {
     return DHT_CHECKSUM_ERROR;
   }

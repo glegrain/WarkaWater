@@ -87,7 +87,7 @@ int main(void)
   RTC_Config();
 
   /* Configure DHT11 Humidity & Temperature sensor */
-  DHT_Init();
+  DHT_Init(DHT11);
 
   /* Configure MS5540C Pressure & Temperature sensor */
   if (MS5540C_Init() != HAL_OK)
@@ -104,19 +104,20 @@ int main(void)
     HAL_GPIO_TogglePin(LED2_GPIO_PORT, LED2_PIN);
     HAL_Delay(1000);
     RTC_TimeToString(aShowTime);
+    printf("###### time: %s ######\n", aShowTime);
     MS5540C_Acquire();
     DHT_StatusTypeDef dht_status = DHT_ReadSensor(&sensorValues);
-    if (dht_status != DHT_OK) {
+    if (dht_status != DHT_OK)
+    {
       printf("DHT Error: %d\n", dht_status);
-    } else {
-      printf("time: %s\n", aShowTime);
-      printf("Sensor values: %d.%d%%, %d.%dºC\n",
-          sensorValues.RelativeHumidityIntegral,
-          sensorValues.RelativeHumidityFractional,
-          sensorValues.TemperatureIntegral,
-          sensorValues.TemperatureFractional);
-      dewpoint = dewPoint((double) sensorValues.TemperatureIntegral,
-                          (double) sensorValues.RelativeHumidityIntegral);
+    }
+    else
+    {
+      printf("Sensor values: %.1f%%, %.1fºC\n",
+          sensorValues.RelativeHumidity,
+          sensorValues.Temperature);
+      dewpoint = dewPoint(sensorValues.Temperature,
+                          sensorValues.RelativeHumidity);
       printf("dewpoint: %dºC\n", (int) dewpoint);
     }
   }

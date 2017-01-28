@@ -2,9 +2,9 @@
   ******************************************************************************
   * @file    Inc/dht.h
   * @author  Guillaume Legrain
-  * @version V0.1.2
-  * @date    26-December-2016
-  * @brief   This file includes the DHT11 sensor driver.
+  * @version V0.2.0
+  * @date    28-January-2017
+  * @brief   This file includes the DHT11 and DHT22 sensor driver.
   ******************************************************************************
   */
 
@@ -17,6 +17,15 @@
 #include "main.h"
 
 /* Exported types ------------------------------------------------------------*/
+
+/**
+  * @brief DHT model definition
+  */
+typedef enum
+{
+  DHT11,
+  DHT22
+} DHT_ModelTypeDef;
 
 /**
   * @brief  DHT Status structures definition
@@ -33,18 +42,16 @@ typedef enum
 //       The DHT11 does also not support negative values, where the 22 and 21 do.
 typedef struct
 {
-  uint8_t RelativeHumidityIntegral;
-  uint8_t RelativeHumidityFractional;
-  uint8_t TemperatureIntegral;
-  uint8_t TemperatureFractional;
+  float RelativeHumidity;
+  float Temperature;
 } DHT_ValuesTypeDef;
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-void DHT_Init(void);
-void DHT_Init_IT(void);
-void DHT_Init_DMA(void);
+void DHT_Init(DHT_ModelTypeDef model);
+void DHT_Init_IT(DHT_ModelTypeDef);
+void DHT_Init_DMA(DHT_ModelTypeDef);
 DHT_StatusTypeDef DHT_ReadSensor(DHT_ValuesTypeDef *values);
 DHT_StatusTypeDef DHT_ReadSensor_IT(DHT_ValuesTypeDef *values);
 DHT_StatusTypeDef DHT_ReadSensor_DMA(DHT_ValuesTypeDef *values);
